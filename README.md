@@ -1,8 +1,15 @@
 # vmware-mcp
 
+[![npm version](https://img.shields.io/npm/v/vmware-mcp.svg)](https://www.npmjs.com/package/vmware-mcp)
+[![license](https://img.shields.io/npm/l/vmware-mcp.svg)](https://github.com/havu0/vmware-mcp/blob/main/LICENSE)
+
 MCP server for controlling VMware Fusion/Workstation virtual machines via the `vmrun` CLI.
 
 Unlike existing VMware MCP servers that depend on the REST API (`vmrest`), this server calls `vmrun` directly — no additional daemon required.
+
+```bash
+npx vmware-mcp
+```
 
 ## Quick Start
 

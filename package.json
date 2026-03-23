@@ -7,22 +7,42 @@
     "vmware-mcp": "./dist/index.js"
   },
   "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "!dist/__tests__",
+    "README.md",
+    "AGENT_GUIDE.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "mcp",
+    "mcp-server",
+    "model-context-protocol",
     "vmware",
     "fusion",
     "workstation",
     "vmrun",
-    "virtual-machine"
+    "virtual-machine",
+    "ai"
   ],
+  "author": "havu0",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/havu0/vmware-mcp.git"
+  },
+  "homepage": "https://github.com/havu0/vmware-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/havu0/vmware-mcp/issues"
+  },
   "engines": {
     "node": ">=18.0.0"
   },
