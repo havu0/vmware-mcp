@@ -7,12 +7,48 @@ Unlike existing VMware MCP servers that depend on the REST API (`vmrest`), this 
 ## Quick Start
 
 ```bash
-# Install globally
 npm install -g vmware-mcp
-
-# Or run directly
-npx vmware-mcp
 ```
+
+### For AI Agents (opencode, Claude Desktop, Cursor, etc.)
+
+Add to your MCP client config and you're done — the agent gets 32 tools for full VM control:
+
+**opencode** (`~/.config/opencode/opencode.json`):
+```json
+{
+  "mcp": {
+    "vmware": {
+      "type": "local",
+      "command": ["npx", "-y", "vmware-mcp",
+        "--guest-user", "my-vm:admin",
+        "--guest-pass", "my-vm:password",
+        "--encryption-pass", "my-vm:encpass"
+      ],
+      "timeout": 300000
+    }
+  }
+}
+```
+
+**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "vmware": {
+      "command": "npx",
+      "args": ["-y", "vmware-mcp",
+        "--guest-user", "my-vm:admin",
+        "--guest-pass", "my-vm:password"
+      ]
+    }
+  }
+}
+```
+
+Credentials can be omitted from args if stored in config file, environment variables, or OS secret store (Keychain / libsecret / PasswordVault). See [Credential Resolution](#credential-resolution) below.
+
+The agent guide for tool usage, workflows, and known limitations is in [`AGENT_GUIDE.md`](AGENT_GUIDE.md).
 
 ### Configuration
 
@@ -41,14 +77,14 @@ Create `~/.config/vmware-mcp/config.json`:
 
 Credentials are resolved in this order (first match wins):
 
-| Priority | Source | Example |
+| Priority | Source | Platforms |
 |---|---|---|
-| 1 | Config file | `"guest_password": "pass"` in config.json |
-| 2 | CLI arguments | `--guest-pass my-vm:pass` |
-| 3 | Environment variables | `VMWARE_MCP_MY-VM_PASS=pass` |
-| 4 | macOS Keychain | `security add-generic-password -s vmware-mcp -a my-vm/guest_password -w pass` |
+| 1 | Config file | All |
+| 2 | CLI arguments | All |
+| 3 | Environment variables | All |
+| 4 | OS secret store | macOS Keychain, Linux libsecret (GNOME Keyring / KDE Wallet), Windows PasswordVault |
 
-If credentials are found in config or Keychain, no CLI args or env vars are needed.
+If credentials exist in config or OS secret store, no CLI args or env vars are needed.
 
 #### Environment Variables
 
@@ -169,47 +205,6 @@ $vault.Add((New-Object Windows.Security.Credentials.PasswordCredential("vmware-m
 | `vm_read_variable` | Read VM variable (runtimeConfig/guestVar/guestEnv) |
 | `vm_write_variable` | Write VM variable |
 | `vm_check_tools` | Check VMware Tools state |
-
-## Integration
-
-### opencode
-
-Add to `~/.config/opencode/opencode.json`:
-
-```json
-{
-  "mcp": {
-    "vmware": {
-      "type": "local",
-      "command": ["node", "/path/to/vmware-mcp/dist/index.js"],
-      "environment": {
-        "VMWARE_MCP_MYVM_USER": "admin",
-        "VMWARE_MCP_MYVM_PASS": "password",
-        "VMWARE_MCP_MYVM_ENCRYPTION_PASS": "encryption-password"
-      },
-      "timeout": 300000
-    }
-  }
-}
-```
-
-### Claude Desktop
-
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "vmware": {
-      "command": "npx",
-      "args": ["-y", "vmware-mcp"],
-      "env": {
-        "VMWARE_MCP_CONFIG": "~/.config/vmware-mcp/config.json"
-      }
-    }
-  }
-}
-```
 
 ## Development
 
