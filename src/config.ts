@@ -18,14 +18,35 @@ function getDefaultConfigPath(): string {
     || join(homedir(), '.config', 'vmware-mcp', 'config.json');
 }
 
-function readKeychain(account: string): string | undefined {
-  if (process.platform !== 'darwin') return undefined;
+function readFromSecretStore(account: string): string | undefined {
   try {
-    return execFileSync(
-      'security',
-      ['find-generic-password', '-s', KEYCHAIN_SERVICE, '-a', account, '-w'],
-      { stdio: ['pipe', 'pipe', 'pipe'], timeout: 5000 },
-    ).toString().trim();
+    switch (process.platform) {
+      case 'darwin':
+        return execFileSync(
+          'security',
+          ['find-generic-password', '-s', KEYCHAIN_SERVICE, '-a', account, '-w'],
+          { stdio: ['pipe', 'pipe', 'pipe'], timeout: 5000 },
+        ).toString().trim();
+
+      case 'linux':
+        return execFileSync(
+          'secret-tool',
+          ['lookup', 'service', KEYCHAIN_SERVICE, 'account', account],
+          { stdio: ['pipe', 'pipe', 'pipe'], timeout: 5000 },
+        ).toString().trim();
+
+      case 'win32': {
+        const ps = `$c = (New-Object Windows.Security.Credentials.PasswordVault).Retrieve('${KEYCHAIN_SERVICE}','${account}'); $c.RetrievePassword(); $c.Password`;
+        return execFileSync(
+          'powershell',
+          ['-NoProfile', '-NonInteractive', '-Command', ps],
+          { stdio: ['pipe', 'pipe', 'pipe'], timeout: 5000 },
+        ).toString().trim();
+      }
+
+      default:
+        return undefined;
+    }
   } catch {
     return undefined;
   }
@@ -95,7 +116,7 @@ function resolveCredential(
   envValue: string | undefined,
   keychainAccount: string,
 ): string | undefined {
-  return configValue ?? cliValue ?? envValue ?? readKeychain(keychainAccount);
+  return configValue ?? cliValue ?? envValue ?? readFromSecretStore(keychainAccount);
 }
 
 export function resolveVm(config: AppConfig, vm?: string): ResolvedVm {

@@ -68,17 +68,31 @@ Pass credentials at server launch — useful when agents start the server:
 node dist/index.js --guest-user my-vm:admin --guest-pass my-vm:password --encryption-pass my-vm:encpass
 ```
 
-#### macOS Keychain
+#### OS Secret Store
 
-Store credentials securely (no plaintext files):
+Store credentials securely (no plaintext files). The server reads from the native secret store automatically.
 
+**macOS (Keychain)**
 ```bash
 security add-generic-password -s vmware-mcp -a "my-vm/guest_user" -w "admin"
 security add-generic-password -s vmware-mcp -a "my-vm/guest_password" -w "password"
 security add-generic-password -s vmware-mcp -a "my-vm/encryption_password" -w "encpass"
 ```
 
-The server reads these automatically on macOS. No config changes needed.
+**Linux (libsecret — GNOME Keyring / KDE Wallet)**
+```bash
+secret-tool store --label="vmware-mcp guest_user" service vmware-mcp account "my-vm/guest_user" <<< "admin"
+secret-tool store --label="vmware-mcp guest_password" service vmware-mcp account "my-vm/guest_password" <<< "password"
+secret-tool store --label="vmware-mcp encryption_password" service vmware-mcp account "my-vm/encryption_password" <<< "encpass"
+```
+
+**Windows (Credential Locker / PasswordVault)**
+```powershell
+$vault = New-Object Windows.Security.Credentials.PasswordVault
+$vault.Add((New-Object Windows.Security.Credentials.PasswordCredential("vmware-mcp", "my-vm/guest_user", "admin")))
+$vault.Add((New-Object Windows.Security.Credentials.PasswordCredential("vmware-mcp", "my-vm/guest_password", "password")))
+$vault.Add((New-Object Windows.Security.Credentials.PasswordCredential("vmware-mcp", "my-vm/encryption_password", "encpass")))
+```
 
 ### vmrun Path Defaults
 
