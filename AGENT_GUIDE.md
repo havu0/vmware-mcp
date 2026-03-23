@@ -82,6 +82,32 @@ guest_kill_process(pid=1234)
 - Use forward slashes: `/home/user/file.txt`
 - Shell override: `guest_run_command(command="ls", shell="sh")`
 
+## Credential Resolution
+
+Credentials resolve automatically in priority order:
+
+```
+config file → CLI args → environment variables → macOS Keychain
+```
+
+If a credential is found in any source, lower-priority sources are skipped.
+If the user has stored passwords in config or Keychain, no CLI args or env vars are needed.
+
+When launching this server with credentials at runtime:
+
+```bash
+node dist/index.js --guest-user win11:admin --guest-pass win11:password --encryption-pass win11:encpass
+```
+
+As an MCP client config (e.g., opencode):
+```json
+{
+  "command": ["node", "dist/index.js", "--guest-pass", "win11:password", "--encryption-pass", "win11:encpass"]
+}
+```
+
+If you get "Anonymous guest operations" errors, credentials are missing from ALL sources.
+
 ## Error Handling
 
 All vmrun errors include actionable hints. When you receive an error:

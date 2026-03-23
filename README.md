@@ -39,7 +39,18 @@ Create `~/.config/vmware-mcp/config.json`:
 }
 ```
 
-Credentials can also be provided via environment variables:
+Credentials are resolved in this order (first match wins):
+
+| Priority | Source | Example |
+|---|---|---|
+| 1 | Config file | `"guest_password": "pass"` in config.json |
+| 2 | CLI arguments | `--guest-pass my-vm:pass` |
+| 3 | Environment variables | `VMWARE_MCP_MY-VM_PASS=pass` |
+| 4 | macOS Keychain | `security add-generic-password -s vmware-mcp -a my-vm/guest_password -w pass` |
+
+If credentials are found in config or Keychain, no CLI args or env vars are needed.
+
+#### Environment Variables
 
 | Variable | Description |
 |---|---|
@@ -48,6 +59,26 @@ Credentials can also be provided via environment variables:
 | `VMWARE_MCP_<VM>_ENCRYPTION_PASS` | VM encryption password |
 
 `<VM>` is the uppercase VM name from config (e.g., `VMWARE_MCP_MY-VM_USER`).
+
+#### CLI Arguments
+
+Pass credentials at server launch — useful when agents start the server:
+
+```bash
+node dist/index.js --guest-user my-vm:admin --guest-pass my-vm:password --encryption-pass my-vm:encpass
+```
+
+#### macOS Keychain
+
+Store credentials securely (no plaintext files):
+
+```bash
+security add-generic-password -s vmware-mcp -a "my-vm/guest_user" -w "admin"
+security add-generic-password -s vmware-mcp -a "my-vm/guest_password" -w "password"
+security add-generic-password -s vmware-mcp -a "my-vm/encryption_password" -w "encpass"
+```
+
+The server reads these automatically on macOS. No config changes needed.
 
 ### vmrun Path Defaults
 
