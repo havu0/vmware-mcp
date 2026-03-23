@@ -13,13 +13,9 @@ npx vmware-mcp
 
 ## Quick Start
 
-```bash
-npm install -g vmware-mcp
-```
-
 ### For AI Agents (opencode, Claude Desktop, Cursor, etc.)
 
-Add to your MCP client config and you're done — the agent gets 32 tools for full VM control:
+Add to your MCP client config — the agent gets 32 tools for full VM control:
 
 **opencode** (`~/.config/opencode/opencode.json`):
 ```json
@@ -53,11 +49,18 @@ Add to your MCP client config and you're done — the agent gets 32 tools for fu
 }
 ```
 
-Credentials can be omitted from args if stored in config file, environment variables, or OS secret store (Keychain / libsecret / PasswordVault). See [Credential Resolution](#credential-resolution) below.
+Credentials can be omitted from args if stored in config file, environment variables, or OS secret store. See [Credential Resolution](#credential-resolution).
 
-The agent guide for tool usage, workflows, and known limitations is in [`AGENT_GUIDE.md`](AGENT_GUIDE.md).
+For tool usage workflows and known limitations, see [`AGENT_GUIDE.md`](AGENT_GUIDE.md).
 
-### Configuration
+### For Manual / Global Install
+
+```bash
+npm install -g vmware-mcp
+vmware-mcp
+```
+
+## Configuration
 
 Create `~/.config/vmware-mcp/config.json`:
 
@@ -82,6 +85,18 @@ Create `~/.config/vmware-mcp/config.json`:
 }
 ```
 
+The config file is optional. VMs can also be specified by full `.vmx` path, and credentials can come from other sources.
+
+### vmrun Path Defaults
+
+| Platform | Default Path |
+|---|---|
+| macOS | `/Applications/VMware Fusion.app/Contents/Public/vmrun` |
+| Windows | `C:\Program Files (x86)\VMware\VMware Workstation\vmrun.exe` |
+| Linux | `/usr/bin/vmrun` |
+
+## Credential Resolution
+
 Credentials are resolved in this order (first match wins):
 
 | Priority | Source | Platforms |
@@ -89,11 +104,17 @@ Credentials are resolved in this order (first match wins):
 | 1 | Config file | All |
 | 2 | CLI arguments | All |
 | 3 | Environment variables | All |
-| 4 | OS secret store | macOS Keychain, Linux libsecret (GNOME Keyring / KDE Wallet), Windows PasswordVault |
+| 4 | OS secret store | macOS Keychain, Linux libsecret, Windows PasswordVault |
 
 If credentials exist in config or OS secret store, no CLI args or env vars are needed.
 
-#### Environment Variables
+### CLI Arguments
+
+```bash
+vmware-mcp --guest-user my-vm:admin --guest-pass my-vm:password --encryption-pass my-vm:encpass
+```
+
+### Environment Variables
 
 | Variable | Description |
 |---|---|
@@ -103,17 +124,9 @@ If credentials exist in config or OS secret store, no CLI args or env vars are n
 
 `<VM>` is the uppercase VM name from config (e.g., `VMWARE_MCP_MY-VM_USER`).
 
-#### CLI Arguments
+### OS Secret Store
 
-Pass credentials at server launch — useful when agents start the server:
-
-```bash
-node dist/index.js --guest-user my-vm:admin --guest-pass my-vm:password --encryption-pass my-vm:encpass
-```
-
-#### OS Secret Store
-
-Store credentials securely (no plaintext files). The server reads from the native secret store automatically.
+Store credentials securely — no plaintext files. The server reads from the native store automatically.
 
 **macOS (Keychain)**
 ```bash
@@ -124,9 +137,9 @@ security add-generic-password -s vmware-mcp -a "my-vm/encryption_password" -w "e
 
 **Linux (libsecret — GNOME Keyring / KDE Wallet)**
 ```bash
-secret-tool store --label="vmware-mcp guest_user" service vmware-mcp account "my-vm/guest_user" <<< "admin"
-secret-tool store --label="vmware-mcp guest_password" service vmware-mcp account "my-vm/guest_password" <<< "password"
-secret-tool store --label="vmware-mcp encryption_password" service vmware-mcp account "my-vm/encryption_password" <<< "encpass"
+secret-tool store --label="vmware-mcp" service vmware-mcp account "my-vm/guest_user" <<< "admin"
+secret-tool store --label="vmware-mcp" service vmware-mcp account "my-vm/guest_password" <<< "password"
+secret-tool store --label="vmware-mcp" service vmware-mcp account "my-vm/encryption_password" <<< "encpass"
 ```
 
 **Windows (Credential Locker / PasswordVault)**
@@ -137,37 +150,29 @@ $vault.Add((New-Object Windows.Security.Credentials.PasswordCredential("vmware-m
 $vault.Add((New-Object Windows.Security.Credentials.PasswordCredential("vmware-mcp", "my-vm/encryption_password", "encpass")))
 ```
 
-### vmrun Path Defaults
-
-| Platform | Default Path |
-|---|---|
-| macOS | `/Applications/VMware Fusion.app/Contents/Public/vmrun` |
-| Windows | `C:\Program Files (x86)\VMware\VMware Workstation\vmrun.exe` |
-| Linux | `/usr/bin/vmrun` |
-
 ## Tools (32)
 
-### VM Lifecycle
+### VM Lifecycle (9)
 
 | Tool | Description |
 |---|---|
 | `vm_start` | Start a VM (gui or headless) |
 | `vm_stop` | Graceful or forced shutdown |
-| `vm_suspend` | Suspend to disk |
+| `vm_suspend` | Suspend to disk (encrypted VMs may not resume via vmrun) |
 | `vm_reset` | Reboot (soft or hard) |
 | `vm_pause` / `vm_unpause` | Pause/resume execution |
 | `vm_status` | Running state + IP address |
-| `vm_list` | List running VMs, or all configured VMs with `all=true` |
-| `vm_get_ip` | Get guest IP (optionally wait) |
+| `vm_list` | Running VMs, or all configured VMs with `all=true` |
+| `vm_get_ip` | Guest IP (optionally wait until ready) |
 
-### Guest Execution
+### Guest Execution (2)
 
 | Tool | Description |
 |---|---|
-| `guest_run_command` | Run shell command, return stdout. Auto-detects OS shell (cmd/bash) |
-| `guest_run_program` | Launch a program (sync or async with `no_wait`) |
+| `guest_run_command` | Run shell command, return stdout. Auto-detects shell (cmd/bash/powershell) |
+| `guest_run_program` | Launch a program (sync or fire-and-forget with `no_wait`) |
 
-### File Operations
+### File Operations (10)
 
 | Tool | Description |
 |---|---|
@@ -182,41 +187,54 @@ $vault.Add((New-Object Windows.Security.Credentials.PasswordCredential("vmware-m
 | `guest_list_directory` | List directory contents |
 | `guest_create_tempfile` | Create temp file, return path |
 
-### Snapshots
+### Snapshots (4)
 
 | Tool | Description |
 |---|---|
-| `vm_snapshot_create` | Create named snapshot |
+| `vm_snapshot_create` | Create named snapshot (may fail on running encrypted VMs) |
 | `vm_snapshot_revert` | Revert to snapshot (optional `auto_start`) |
 | `vm_snapshot_list` | List snapshots in tree format |
 | `vm_snapshot_delete` | Delete snapshot |
 
-### Process Management
+### Process Management (2)
 
 | Tool | Description |
 |---|---|
 | `guest_process_list` | List all guest processes |
 | `guest_kill_process` | Kill process by PID |
 
-### Screen & Input
+### Screen & Input (2)
 
 | Tool | Description |
 |---|---|
-| `vm_capture_screen` | Screenshot as base64 PNG or save to file |
-| `guest_type_keystrokes` | Send keystrokes to guest |
+| `vm_capture_screen` | Screenshot as base64 PNG or save to file (requires guest credentials) |
+| `guest_type_keystrokes` | Send keystrokes to guest (requires macOS Accessibility permission) |
 
-### Variables & Tools State
+### Variables & Tools State (3)
 
 | Tool | Description |
 |---|---|
-| `vm_read_variable` | Read VM variable (runtimeConfig/guestVar/guestEnv) |
+| `vm_read_variable` | Read VM variable (runtimeConfig / guestVar / guestEnv) |
 | `vm_write_variable` | Write VM variable |
-| `vm_check_tools` | Check VMware Tools state |
+| `vm_check_tools` | Check VMware Tools state (unknown / installed / running) |
+
+## Known Limitations
+
+These are `vmrun` CLI constraints, not bugs in this server. All errors include actionable hints.
+
+| Limitation | Workaround |
+|---|---|
+| Snapshot ops fail on running encrypted VMs | Stop the VM first |
+| `vm_suspend` → `vm_start` fails on encrypted VMs | Use `vm_stop` / `vm_start` instead |
+| Guest commands have a 5-minute hard timeout | Break long operations into smaller commands |
+| `guest_type_keystrokes` needs macOS Accessibility | Grant permission in System Settings |
+| `vm_capture_screen` requires guest credentials | Configure guest_user / guest_password |
+| Port forwarding is Windows-host only | Not available on macOS Fusion |
 
 ## Development
 
 ```bash
-git clone https://github.com/user/vmware-mcp
+git clone https://github.com/havu0/vmware-mcp.git
 cd vmware-mcp
 npm install
 npm run build    # tsc
@@ -224,15 +242,6 @@ npm test         # vitest (70 tests)
 npm run dev      # tsc --watch
 ```
 
-## Known Limitations
-
-- **Encrypted VMs**: Snapshot create/delete/revert may fail on running encrypted VMs. Stop the VM first.
-- **Encrypted VMs + suspend**: `vm_suspend` works but `vm_start` may fail to resume. Use `vm_stop`/`vm_start` instead.
-- **Guest command timeout**: vmrun has a hard 5-minute limit on guest operations. Not configurable.
-- **`guest_type_keystrokes`**: Requires macOS Accessibility permission for VMware Fusion.
-- **`vm_capture_screen`**: Requires guest credentials even though it's a display operation.
-- **Port forwarding**: vmrun port forwarding commands are Windows-host only, not available on macOS Fusion.
-
 ## License
 
-MIT
+[MIT](LICENSE)
