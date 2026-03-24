@@ -13,11 +13,16 @@ npx vmware-mcp
 
 ## Quick Start
 
-### For AI Agents (opencode, Claude Desktop, Cursor, etc.)
+Add to your MCP client config — the agent gets 32 tools for full VM control.
 
-Add to your MCP client config — the agent gets 32 tools for full VM control:
+Credentials can be passed as CLI args, or omitted if stored in config file, env vars, or [OS secret store](#os-secret-store).
 
-**opencode** (`~/.config/opencode/opencode.json`):
+For tool usage workflows and known limitations, see [`AGENT_GUIDE.md`](AGENT_GUIDE.md).
+
+<details>
+<summary><b>opencode</b></summary>
+
+`~/.config/opencode/opencode.json`:
 ```json
 {
   "mcp": {
@@ -33,8 +38,12 @@ Add to your MCP client config — the agent gets 32 tools for full VM control:
   }
 }
 ```
+</details>
 
-**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+<details>
+<summary><b>Claude Desktop</b></summary>
+
+`~/Library/Application Support/Claude/claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
@@ -48,12 +57,228 @@ Add to your MCP client config — the agent gets 32 tools for full VM control:
   }
 }
 ```
+</details>
 
-Credentials can be omitted from args if stored in config file, environment variables, or OS secret store. See [Credential Resolution](#credential-resolution).
+<details>
+<summary><b>Claude Code (CLI)</b></summary>
 
-For tool usage workflows and known limitations, see [`AGENT_GUIDE.md`](AGENT_GUIDE.md).
+```bash
+claude mcp add --transport stdio vmware -- npx -y vmware-mcp \
+  --guest-user my-vm:admin --guest-pass my-vm:password
+```
 
-### For Manual / Global Install
+Or manually in `~/.claude.json` or `.mcp.json` (project-level):
+```json
+{
+  "mcpServers": {
+    "vmware": {
+      "command": "npx",
+      "args": ["-y", "vmware-mcp", "--guest-user", "my-vm:admin", "--guest-pass", "my-vm:password"]
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><b>Cursor</b></summary>
+
+`~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project):
+```json
+{
+  "mcpServers": {
+    "vmware": {
+      "command": "npx",
+      "args": ["-y", "vmware-mcp",
+        "--guest-user", "my-vm:admin",
+        "--guest-pass", "my-vm:password"
+      ]
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><b>Windsurf (Codeium)</b></summary>
+
+`~/.codeium/windsurf/mcp_config.json`:
+```json
+{
+  "mcpServers": {
+    "vmware": {
+      "command": "npx",
+      "args": ["-y", "vmware-mcp",
+        "--guest-user", "my-vm:admin",
+        "--guest-pass", "my-vm:password"
+      ]
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><b>GitHub Copilot (VS Code)</b></summary>
+
+`.vscode/mcp.json` (workspace):
+```json
+{
+  "servers": {
+    "vmware": {
+      "command": "npx",
+      "args": ["-y", "vmware-mcp",
+        "--guest-user", "my-vm:admin",
+        "--guest-pass", "my-vm:password"
+      ]
+    }
+  }
+}
+```
+
+Note: uses `servers` key, not `mcpServers`.
+</details>
+
+<details>
+<summary><b>Cline (VS Code Extension)</b></summary>
+
+Configure via Cline sidebar → MCP Servers, or manually:
+
+macOS: `~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`
+
+```json
+{
+  "mcpServers": {
+    "vmware": {
+      "command": "npx",
+      "args": ["-y", "vmware-mcp",
+        "--guest-user", "my-vm:admin",
+        "--guest-pass", "my-vm:password"
+      ],
+      "disabled": false
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><b>Roo Code (VS Code Extension)</b></summary>
+
+`~/.roo/mcp_settings.json` (global) or `.roo/mcp.json` (project):
+```json
+{
+  "mcpServers": {
+    "vmware": {
+      "command": "npx",
+      "args": ["-y", "vmware-mcp",
+        "--guest-user", "my-vm:admin",
+        "--guest-pass", "my-vm:password"
+      ]
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><b>Amazon Q Developer</b></summary>
+
+`~/.aws/amazonq/mcp.json` (global) or `.amazonq/mcp.json` (project):
+```json
+{
+  "mcpServers": {
+    "vmware": {
+      "command": "npx",
+      "args": ["-y", "vmware-mcp",
+        "--guest-user", "my-vm:admin",
+        "--guest-pass", "my-vm:password"
+      ]
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><b>Zed</b></summary>
+
+`~/.config/zed/settings.json` — note: uses `context_servers` key with different structure:
+```json
+{
+  "context_servers": {
+    "vmware": {
+      "command": {
+        "path": "npx",
+        "args": ["-y", "vmware-mcp",
+          "--guest-user", "my-vm:admin",
+          "--guest-pass", "my-vm:password"
+        ]
+      }
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><b>Continue.dev</b></summary>
+
+`~/.continue/config.json`:
+```json
+{
+  "mcpServers": {
+    "vmware": {
+      "command": "npx",
+      "args": ["-y", "vmware-mcp",
+        "--guest-user", "my-vm:admin",
+        "--guest-pass", "my-vm:password"
+      ]
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><b>Sourcegraph Cody</b></summary>
+
+`~/.config/cody/mcp_servers.json`:
+```json
+{
+  "mcpServers": {
+    "vmware": {
+      "command": "npx",
+      "args": ["-y", "vmware-mcp",
+        "--guest-user", "my-vm:admin",
+        "--guest-pass", "my-vm:password"
+      ]
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><b>JetBrains AI Assistant</b></summary>
+
+Settings → Tools → AI Assistant → Model Context Protocol (MCP) → Add:
+```json
+{
+  "mcpServers": {
+    "vmware": {
+      "command": "npx",
+      "args": ["-y", "vmware-mcp",
+        "--guest-user", "my-vm:admin",
+        "--guest-pass", "my-vm:password"
+      ]
+    }
+  }
+}
+```
+</details>
+
+### Manual / Global Install
 
 ```bash
 npm install -g vmware-mcp
