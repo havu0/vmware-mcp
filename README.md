@@ -339,6 +339,8 @@ If credentials exist in config or OS secret store, no CLI args or env vars are n
 vmware-mcp --guest-user my-vm:admin --guest-pass my-vm:password --encryption-pass my-vm:encpass
 ```
 
+> **Note**: Passwords with `!`, `$`, or other shell special characters may be mangled by bash history expansion. Use single quotes in bash (`'my-vm:p@ss!word'`), or prefer config file / OS secret store for passwords with special characters.
+
 ### Environment Variables
 
 | Variable | Description |

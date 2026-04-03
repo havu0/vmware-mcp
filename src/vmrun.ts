@@ -51,6 +51,10 @@ const ERROR_HINTS: Array<{ pattern: RegExp; hint: string }> = [
     pattern: /The operation is not supported/i,
     hint: 'This operation is not supported in the current VM state. Encrypted VMs may not resume from suspend via vmrun — use VMware Fusion GUI to resume, or use vm_stop/vm_start instead of vm_suspend.',
   },
+  {
+    pattern: /does not support empty passwords|empty password/i,
+    hint: 'vmrun does not support empty guest passwords. Set a password on the guest OS account, then update guest_password in config, env var, or CLI arg.',
+  },
 ];
 
 function enhanceError(rawMessage: string): string {
@@ -224,14 +228,26 @@ export class VmrunClient {
     const interpreter = this.getInterpreter(vm.osType);
     const wrappedCmd = this.wrapCommandForRedirect(vm.osType, command, remoteTmp);
 
-    await this.runScriptInGuest(vm, interpreter, wrappedCmd, false, timeoutMs);
+    let scriptError: Error | undefined;
+    try {
+      await this.runScriptInGuest(vm, interpreter, wrappedCmd, false, timeoutMs);
+    } catch (err) {
+      scriptError = err instanceof Error ? err : new Error(String(err));
+    }
 
-    const localTmp = `/tmp/vmware-mcp-${randomUUID()}.txt`;
-    await this.copyFileFromGuestToHost(vm, remoteTmp, localTmp);
-    const output = await readFile(localTmp, 'utf-8');
+    let output = '';
+    try {
+      const localTmp = `/tmp/vmware-mcp-${randomUUID()}.txt`;
+      await this.copyFileFromGuestToHost(vm, remoteTmp, localTmp);
+      output = await readFile(localTmp, 'utf-8');
+      await unlink(localTmp).catch(() => {});
+    } catch {
+      if (scriptError) throw scriptError;
+    }
 
     await this.deleteFileInGuest(vm, remoteTmp).catch(() => {});
-    await unlink(localTmp).catch(() => {});
+
+    if (scriptError && !output) throw scriptError;
 
     return output;
   }

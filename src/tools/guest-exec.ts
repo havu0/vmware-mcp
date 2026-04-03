@@ -28,16 +28,17 @@ export function registerGuestExecTools(server: McpServer, client: VmrunClient, c
       }
 
       const interpreterMap: Record<string, string> = {
-        cmd: 'cmd',
-        powershell: 'powershell',
+        cmd: '',
+        powershell: 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',
         bash: '/bin/bash',
         sh: '/bin/sh',
       };
 
       const remoteTmp = await client.createTempFileInGuest(resolved);
       const interpreter = interpreterMap[shell];
+      const prefix = shell === 'cmd' ? 'cmd /c ' : '';
       const wrapCmd = resolved.osType === 'windows'
-        ? `${command} > "${remoteTmp}" 2>&1`
+        ? `${prefix}${command} > "${remoteTmp}" 2>&1`
         : `${command} > '${remoteTmp}' 2>&1`;
 
       await client.runScriptInGuest(resolved, interpreter, wrapCmd, false, timeoutMs);
